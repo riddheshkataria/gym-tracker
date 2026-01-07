@@ -10,7 +10,8 @@ const Login = () => {
         email:'',
         password:''
     });
-
+    const navigate = useNavigate();
+    
     const onChange=(e)=>{
         if (error) setError("");
         setFormData({...formData, [e.target.id]: e.target.value})
@@ -25,6 +26,9 @@ const Login = () => {
             const response= await axios.post(url, formData);
             localStorage.setItem('userInfo', JSON.stringify(response.data));
             console.log('Success! Logged in as: ',response.data.data.username);
+
+            navigate('/dashboard');
+            window.location.reload();
         } catch(error) {
             const serverMessage = error.response?.data?.message;
             setError(serverMessage || 'Server is not responding. Check your connection.');
