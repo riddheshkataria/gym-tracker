@@ -41,14 +41,12 @@ const Login = () => {
                 <h2 className="text-3xl font-black text-emerald-400 mb-6 text-center italic">GYM TRACKER</h2>
                 
                 <div className="relative flex bg-slate-700 rounded-lg p-1 mb-8 w-full">
-                    {/* The Animated Background Slider */}
                     <div 
                         className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-emerald-500 rounded-md transition-all duration-300 ease-in-out ${
                         isLogin ? "left-1" : "left-[50%]"
                         }`}
                     ></div>
 
-                    {/* Login Button */}
                     <button
                         type="button"
                         onClick={() => {
@@ -62,7 +60,6 @@ const Login = () => {
                         LOGIN
                     </button>
 
-                    {/* Register Button */}
                     <button
                         type="button"
                         onClick={() => {
