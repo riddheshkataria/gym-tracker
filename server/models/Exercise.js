@@ -7,7 +7,7 @@ const ALL_MUSCLES=[
     'Front Delts', 'Side Delts', 'Rear Delts',
     'Biceps', 'Triceps', 'Forearms',
     'Abs', 'Obliques', 'Lower Abs',
-    'Adductors', 'Abductors'
+    'Adductors', 'Abductors', 'Hip Flexors'
 ];
 
 const exerciseSchema= mongoose.Schema({
