@@ -42,6 +42,7 @@ export const loginUser= async(req, res, next)=>{
                     token: generateToken(user._id)
                 }
             })
+            console.log("Logged in");
         } else {
             res.status(401);
             throw new Error('Invalid email or password');

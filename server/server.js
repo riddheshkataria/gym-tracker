@@ -14,6 +14,7 @@ const PORT= process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.get('/api/test', (req, res) => res.send('API is reaching server.js'));
 app.use('/api/users',userRoutes);
 app.use('/api/exercises', exerciseRoutes);
 
