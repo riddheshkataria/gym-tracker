@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {useNavigate} from "react-router-dom"
 import { 
   Menu,
@@ -11,6 +11,8 @@ import {
   LogOut, 
   PlusCircle 
 } from 'lucide-react';
+import WorkoutManager from "../components/dashboard/WorkoutManager";
+import axios from 'axios';
 
 const Dashboard= () =>{
 
@@ -18,8 +20,51 @@ const Dashboard= () =>{
 
   const [isSidebarOpen, setIsSidebarOpen]=useState(false);
   const [isProfileOpen, setIsProfileOpen]=useState(false);
-  
+  const [activeView, setActiveView]=useState('Overview');
+  const [activeWorkout, setActiveWorkout]=useState(null);
+
   const user= JSON.parse(localStorage.getItem('userInfo'))?.data;
+  
+  useEffect(() => {
+    const checkOngoing = async () => {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        if (!userInfo) return;
+
+        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        const { data } = await axios.get('http://localhost:5000/api/workouts/ongoing', config);
+        
+        if (data) {
+          setActiveWorkout(data);
+          setActiveView('Session');
+        }
+      } catch (error) {
+        console.error("Session check failed", error);
+      }
+    };
+    checkOngoing();
+  }, []);
+
+  const handleStartWorkout = async () => {
+    console.log("Button clicked!");
+    if (activeWorkout) {
+      setActiveView('Session');
+      return;
+    }
+
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      const token = userInfo?.token || userInfo?.data?.token;
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      const { data } = await axios.post('http://localhost:5000/api/workouts', {}, config);
+      setActiveWorkout(data);
+      setActiveView('Session'); 
+    } catch (error) {
+      console.error(error.response?.data?.message);
+    }
+  };
+
 
   const handleLogout = () => {
       localStorage.removeItem('userInfo');
@@ -29,6 +74,7 @@ const Dashboard= () =>{
     
   return(
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col md:flex-row">
+        {/* navbar */}
         <nav className="h-16 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4 md:px-8 fixed w-full top-0 z-50">
           <div className="flex items-center gap-4">
             <button 
@@ -39,6 +85,23 @@ const Dashboard= () =>{
             </button>
             <h2 className="text-xl font-black text-emerald-400 italic tracking-tighter">GYM TRACKER</h2>
           </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleStartWorkout}
+              disabled={activeWorkout && activeView!=='Session'}
+              className={
+                `hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                activeWorkout 
+                ? "bg-amber-500/10 text-amber-500 border border-amber-500/50 hover:bg-amber-500 hover:text-slate-900" 
+                : "bg-emerald-500 text-slate-900 hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+              }`}
+            >
+              <PlusCircle size={16} />
+              {activeWorkout ? 'Resume Session' : 'Start Workout'}
+            </button>
+          </div>
+
 
           <div className="relative">
             <button 
@@ -78,11 +141,14 @@ const Dashboard= () =>{
           `}>
             <div className="p-4 space-y-2">
               {[
-                { icon: <PlusCircle size={20} />, label: 'Start Workout' },
-                { icon: <History size={20} />, label: 'History' },
-                { icon: <Dumbbell size={20} />, label: 'Exercises' },
-              ].map((item, idx) => (
-                <button key={idx} className="w-full flex items-center gap-3 p-3 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50 transition-all font-bold text-xs uppercase tracking-widest">
+                { icon: <PlusCircle size={20} />, label: 'Start Workout', view:'Overview' },
+                { icon: <History size={20} />, label: 'History', view:'History'},
+                { icon: <Dumbbell size={20} />, label: 'Exercises', view:'Exercises' },
+              ].map((item) => (
+                <button 
+                key={item.label} 
+                onClick={()=>setActiveView(item.view)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50 transition-all font-bold text-xs uppercase tracking-widest">
                   {item.icon} {item.label}
                 </button>
               ))}
@@ -91,12 +157,39 @@ const Dashboard= () =>{
 
           <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-900">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold mb-2 text-slate-100">Dashboard</h1>
-                <p className="text-slate-400 text-sm">Welcome back to your training center.</p>
-                
-                <div className="mt-8 h-64 border-2 border-dashed border-slate-800 p-4 rounded-3xl flex items-center justify-center text-slate-700 font-bold uppercase tracking-widest">
-                  Workout Stats Coming Soon
+              
+              {activeView === 'Overview' && (
+                <div className="animate-in fade-in duration-500">
+                  <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
+                  <p className="text-slate-400 text-sm mb-8">Welcome back, {user?.username}.</p>
+                  
+                  <WorkoutManager 
+                    activeWorkout={activeWorkout} 
+                    onStart={handleStartWorkout}
+                    setActiveView={setActiveView} 
+                  />
+                  
+                  <div className="h-64 border-2 border-dashed border-slate-800 rounded-3xl flex items-center justify-center text-slate-700 font-bold uppercase tracking-widest">
+                    Stats & Progress Charts
+                  </div>
                 </div>
+              )}
+
+              {activeView === 'Session' && (
+                <div className="animate-in zoom-in-95 duration-300">
+                  {/* We will build this WorkoutSession component tomorrow */}
+                  <div className="bg-slate-800 p-8 rounded-3xl border border-emerald-500/20">
+                    <h2 className="text-xl font-black text-emerald-400">ACTIVE SESSION</h2>
+                    <p className="text-slate-400">You can now add exercises from the list.</p>
+                    {/* Your 100 exercises will be searchable here */}
+                  </div>
+                </div>
+              )}
+
+              {activeView === 'Exercises' && <ExerciseLibrary />}
+              
+              {activeView === 'History' && <WorkoutHistory />}
+
             </div>
           </main>
         </div>
@@ -107,7 +200,7 @@ const Dashboard= () =>{
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
-       
+      
     </div>
   );
 }

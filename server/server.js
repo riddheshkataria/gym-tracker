@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js'
 import exerciseRoutes from './routes/exerciseRoutes.js';
-
+import workoutRoutes from './routes/workoutRoutes.js'
 dotenv.config();
 
 connectDB();
@@ -17,8 +17,8 @@ app.use(express.json());
 app.get('/api/test', (req, res) => res.send('API is reaching server.js'));
 app.use('/api/users',userRoutes);
 app.use('/api/exercises', exerciseRoutes);
+app.use('/api/workouts', workoutRoutes);
 
-// Error Handling Middleware
 app.use((err, req, res, next) => {
     console.log("Error Code:", err.code); 
     console.log("Error KeyValue:", err.keyValue);
