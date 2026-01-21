@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import WorkoutManager from "../components/dashboard/WorkoutManager";
 import axios from 'axios';
+import WorkoutSession from "../components/dashboard/WorkoutSession";
+
 
 const Dashboard= () =>{
 
@@ -29,39 +31,50 @@ const Dashboard= () =>{
     const checkOngoing = async () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-        if (!userInfo) return;
+        const token = userInfo?.token || userInfo?.data?.token;
+        
+        if (!token) return;
 
-        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        const config = { headers: { Authorization: `Bearer ${token}` } };
         const { data } = await axios.get('http://localhost:5000/api/workouts/ongoing', config);
         
-        if (data) {
+        // If the API returns a workout object (not null)
+        if (data && data._id) {
+          console.log("Found ongoing workout:", data._id);
           setActiveWorkout(data);
-          setActiveView('Session');
+          setActiveView('Session'); // THIS IS KEY: Force the view to 'Session' on load
         }
       } catch (error) {
-        console.error("Session check failed", error);
+        console.error("Session sync failed:", error.response?.data?.message);
       }
     };
     checkOngoing();
   }, []);
 
   const handleStartWorkout = async () => {
-    console.log("Button clicked!");
-    if (activeWorkout) {
-      setActiveView('Session');
-      return;
-    }
-
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token || userInfo?.data?.token;
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
       const { data } = await axios.post('http://localhost:5000/api/workouts', {}, config);
+      
       setActiveWorkout(data);
       setActiveView('Session'); 
     } catch (error) {
-      console.error(error.response?.data?.message);
+      // IF THE BACKEND SAYS 400 (ALREADY ACTIVE), FETCH THE ONGOING ONE INSTEAD
+      if (error.response?.status === 400) {
+        console.log("Workout already exists, fetching ongoing session...");
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        const token = userInfo?.token || userInfo?.data?.token;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        
+        const { data } = await axios.get('http://localhost:5000/api/workouts/ongoing', config);
+        setActiveWorkout(data);
+        setActiveView('Session');
+      } else {
+        console.error(error.response?.data?.message || "Start failed");
+      }
     }
   };
 
@@ -156,7 +169,7 @@ const Dashboard= () =>{
           </aside>
 
           <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-900">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-full mx-auto w-full">
               
               {activeView === 'Overview' && (
                 <div className="animate-in fade-in duration-500">
@@ -176,14 +189,10 @@ const Dashboard= () =>{
               )}
 
               {activeView === 'Session' && (
-                <div className="animate-in zoom-in-95 duration-300">
-                  {/* We will build this WorkoutSession component tomorrow */}
-                  <div className="bg-slate-800 p-8 rounded-3xl border border-emerald-500/20">
-                    <h2 className="text-xl font-black text-emerald-400">ACTIVE SESSION</h2>
-                    <p className="text-slate-400">You can now add exercises from the list.</p>
-                    {/* Your 100 exercises will be searchable here */}
-                  </div>
-                </div>
+                <WorkoutSession 
+                  activeWorkout={activeWorkout} 
+                  setActiveWorkout={setActiveWorkout} 
+                />
               )}
 
               {activeView === 'Exercises' && <ExerciseLibrary />}
